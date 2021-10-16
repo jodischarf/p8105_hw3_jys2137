@@ -29,3 +29,52 @@ options(
 scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
+
+The purpose of this file is to present the answers to Homework 3, an assignment reinforcing ideas in the **Visualization & EDA** topic for P8105. 
+
+
+## Problem 1
+This problem uses **"The Instacart Online Grocery Shopping Dataset 2017"**, an anonymized dataset with over 3 million online grocery orders from more than 200,000 Instacart (online grocery service) users.
+
+### Loading in of _Instacart_ data
+First, we read in the dataset through the code chunk below.
+
+```{r load_instacart}
+data("instacart")
+
+instacart = 
+  instacart %>% 
+  as_tibble(instacart)
+```
+
+### Exploration of the _Instacart_ dataset
+The next few steps allow for exploration of the _instacart_ dataset.
+
+#### 1. Description of the dataset
+
+The 'Instacart' dataset includes **`r nrow(instacart)` rows** and **`r ncol(instacart)` columns**, where each row in the dataset is a product from an instacart order. It consists of **`r instacart %>% select(user_id, order_id) %>% distinct %>% count` orders** from **`r instacart %>% select(user_id) %>% distinct %>% count` unique users**, including a total of **`r instacart %>% select(product_id) %>% distinct %>% count` products**.
+
+Key variables include identifiers for **order** (`order_id`), **product** (`product_id`), and **customer** (`user_id`). Other variables provide information on the order such as the order in which each product was added to cart (`add_to_cart_order`), if the product has been reordered in the past (`reordered`), and the day and time on which the order was placed (`order_dow`and `order_hour_of_day`). In addition, variables containing the specifics of each product were included such as the name (e.g., "Bulgarian Yogurt", "Mild Diced Green Chiles", "Organic Raspberries"), aisle (e.g. "yogurt", "canned jarred vegetables". packaged vegetables fruits"), and department of the product (e.g., "dairy eggs","canned goods", "produce").
+
+
+#### 2. Aisle specific exploration
+
+##### Aisles most ordered from
+There are **`r instacart %>% select(aisle) %>% distinct %>% count` aisles** and the aisles most ordered from are _fresh vegetables_ and _fresh fruits_ as seen in the table produced below, which shows the top 10 aisles that most items are ordered from.
+
+```{r aisle_table}
+aisle_table =
+  instacart %>% 
+  count(aisle) %>% 
+  arrange(desc(n)) %>% 
+  head(n = 10) %>% 
+  mutate(row_number = 1:n()) %>% 
+  select(row_number, aisle, n) %>% 
+  knitr::kable(
+             caption = "**_Fig. 1. Top 10 Aisles Most Ordered From_**",
+             col.names = c('Rank', 'Aisle', 'N'),
+             align = "clc")
+
+aisle_table
+```
+
