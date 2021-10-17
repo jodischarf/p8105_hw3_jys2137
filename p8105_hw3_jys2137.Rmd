@@ -7,6 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(lubridate)
 library(ggridges)
 library(patchwork)
 library(p8105.datasets)
@@ -36,45 +37,97 @@ The purpose of this file is to present the answers to Homework 3, an assignment 
 ## Problem 1
 This problem uses **"The Instacart Online Grocery Shopping Dataset 2017"**, an anonymized dataset with over 3 million online grocery orders from more than 200,000 Instacart (online grocery service) users.
 
-### Loading in of _Instacart_ data
-First, we read in the dataset through the code chunk below.
+### 1. Loading in `instacart` dataset
+First, we read in the `instacart` dataset through the code chunk below.
 
 ```{r load_instacart}
 data("instacart")
 
-instacart = 
+instacart_df = 
   instacart %>% 
   as_tibble(instacart)
 ```
 
-### Exploration of the _Instacart_ dataset
-The next few steps allow for exploration of the _instacart_ dataset.
+### 2. Description of the `instacart` dataset
 
-#### 1. Description of the dataset
+The 'Instacart' dataset includes **`r nrow(instacart)` rows** and **`r ncol(instacart)` variables**, where each row in the dataset is a product from an instacart order. It consists of **`r instacart %>% select(user_id, order_id) %>% distinct %>% count` orders** from **`r instacart %>% select(user_id) %>% distinct %>% count` unique users**, including a total of **`r instacart %>% select(product_id) %>% distinct %>% count` products**.
 
-The 'Instacart' dataset includes **`r nrow(instacart)` rows** and **`r ncol(instacart)` columns**, where each row in the dataset is a product from an instacart order. It consists of **`r instacart %>% select(user_id, order_id) %>% distinct %>% count` orders** from **`r instacart %>% select(user_id) %>% distinct %>% count` unique users**, including a total of **`r instacart %>% select(product_id) %>% distinct %>% count` products**.
+Key variables include identifiers for **order** (`order_id`), **product** (`product_id`), and **customer** (`user_id`). Other variables provide information on the order such as the order in which each product was added to cart (`add_to_cart_order`), if the product has been reordered in the past (`reordered`), and the day and time on which the order was placed (`order_dow`and `order_hour_of_day`). 
 
-Key variables include identifiers for **order** (`order_id`), **product** (`product_id`), and **customer** (`user_id`). Other variables provide information on the order such as the order in which each product was added to cart (`add_to_cart_order`), if the product has been reordered in the past (`reordered`), and the day and time on which the order was placed (`order_dow`and `order_hour_of_day`). In addition, variables containing the specifics of each product were included such as the name (e.g., "Bulgarian Yogurt", "Mild Diced Green Chiles", "Organic Raspberries"), aisle (e.g. "yogurt", "canned jarred vegetables". packaged vegetables fruits"), and department of the product (e.g., "dairy eggs","canned goods", "produce").
+In addition, variables containing the specifics of each product were included such as the name (e.g., "Bulgarian Yogurt", "Mild Diced Green Chiles", "Organic Raspberries"), aisle (e.g. "yogurt", "canned jarred vegetables", packaged vegetables fruits"), and department of the product (e.g., "dairy eggs","canned goods", "produce").
+
+### 3. Exploration of _aisles_ in the `instacart` dataset
+The next few steps allow for further exploration of the `instacart` dataset as we look into:
+
+1. Number of aisles and aisles most ordered from
+2. Number of items from each aisle
+3. Most popular items in each of the aisles `baking ingredients`, `dog food care`, and `packaged vegetables fruits`
 
 
-#### 2. Aisle specific exploration
+#### 3.1. Number of _aisles_ and those most ordered from
 
-##### Aisles most ordered from
-There are **`r instacart %>% select(aisle) %>% distinct %>% count` aisles** and the aisles most ordered from are _fresh vegetables_ and _fresh fruits_ as seen in the table produced below, which shows the top 10 aisles that most items are ordered from.
+There are **`r instacart %>% select(aisle) %>% distinct %>% count` aisles** in total. The aisles most ordered from are `fresh vegetables` and `fresh fruits` as seen in the table produced below, which shows the top 10 aisles that most items are ordered from.
 
 ```{r aisle_table}
 aisle_table =
-  instacart %>% 
+  instacart_df %>% 
   count(aisle) %>% 
   arrange(desc(n)) %>% 
   head(n = 10) %>% 
   mutate(row_number = 1:n()) %>% 
-  select(row_number, aisle, n) %>% 
-  knitr::kable(
-             caption = "**_Fig. 1. Top 10 Aisles Most Ordered From_**",
+  select(row_number, aisle, n)
+
+knitr::kable(aisle_table,
+             caption = "_**Fig. 1. Top 10 Aisles Most Ordered From**_",
              col.names = c('Rank', 'Aisle', 'N'),
              align = "clc")
-
-aisle_table
 ```
 
+#### 3.2. Number of items from each aisle 
+
+Next, we produce a plot that shows the number of items ordered in each aisle. Only aisles with more than 10000 items ordered are included.
+
+```{r aisle_plot, message = FALSE}
+aisle_plot =
+  instacart_df %>% 
+  count(aisle) %>% 
+  filter(n > 10000) %>% 
+  mutate(aisle = fct_reorder(aisle, desc(n))) %>% 
+  ggplot(aes(x = aisle, y = n, fill = aisle)) + 
+  geom_bar(stat = "identity") +
+  theme(
+    axis.text.x = element_text(angle = -65, hjust = 0, vjust = .5,),
+    plot.title = element_text(face = "bold.italic" ),
+    legend.position = "none") +
+  labs(
+    title = "Fig. 2. Number of Instacart Items Ordered by Aisle", 
+    x = "Aisle",
+    y = "Number of items ordered",
+    caption = "Data from Instacart Online Grocery Shopping Dataset 2017") 
+
+aisle_plot
+```
+
+#### 3.3. Most popular items 
+
+Now, we use a table showing the **three most popular items** in each of the aisles `baking ingredients`, `dog food care`, and `packaged vegetables fruits`, including the number of times each item was ordered.
+
+```{r pop_item_table}
+pop_item = 
+  instacart %>% 
+  filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle) %>% 
+  count(product_name) %>%
+  mutate(rank = rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  mutate(product_name_count = paste(product_name, "-", "ordered", n, "times")) %>%
+  select(-n, -product_name) %>% 
+  arrange(rank) %>% 
+  pivot_wider(names_from = aisle, values_from = product_name_count) 
+
+knitr::kable(pop_item, 
+             caption = "_**Fig. 3. Top 3 Items Ordered by Aisle**_", 
+             format = "simple", 
+             col.names = str_to_title(names(pop_item)),
+             align = "clll")
+```
