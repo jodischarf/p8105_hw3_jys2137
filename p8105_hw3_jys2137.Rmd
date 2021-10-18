@@ -14,7 +14,8 @@ library(p8105.datasets)
 knitr::opts_chunk$set(
 	echo = TRUE,
 	warning = FALSE,
-	fig.width = 8, 
+	fig.width = 6, 
+	fig.asp = .6,
   fig.height = 6,
   out.width = "90%"
 )
@@ -68,15 +69,13 @@ The next few steps allow for further exploration of the `instacart` dataset as w
 There are **`r instacart %>% select(aisle) %>% distinct %>% count` aisles** in total. The aisles most ordered from are `fresh vegetables` and `fresh fruits` as seen in the table produced below, which shows the top 10 aisles that most items are ordered from.
 
 ```{r aisle_table}
-aisle_table =
-  instacart_df %>% 
+instacart_df %>% 
   count(aisle) %>% 
   arrange(desc(n)) %>% 
   head(n = 10) %>% 
   mutate(row_number = 1:n()) %>% 
-  select(row_number, aisle, n)
-
-knitr::kable(aisle_table,
+  select(row_number, aisle, n) %>% 
+  knitr::kable(
              caption = "_**Fig. 1. Top 10 Aisles Most Ordered From**_",
              col.names = c('Rank', 'Aisle', 'N'),
              align = "clc")
@@ -86,9 +85,8 @@ knitr::kable(aisle_table,
 
 Next, we produce a plot that shows the number of items ordered in each aisle. Only aisles with more than 10000 items ordered are included.
 
-```{r aisle_plot, message = FALSE}
-aisle_plot =
-  instacart_df %>% 
+```{r aisle_plot, fig.width=8, message = FALSE}
+instacart_df %>% 
   count(aisle) %>% 
   filter(n > 10000) %>% 
   mutate(aisle = fct_reorder(aisle, n)) %>% 
@@ -96,7 +94,7 @@ aisle_plot =
   geom_bar(stat = "identity", alpha = .75) +
   coord_flip() +
   theme(
-    axis.text.x = element_text(angle = -90, hjust = 0, vjust = .5),
+    axis.text.x = element_text(angle = -35, hjust = 0, vjust = .5),
     plot.title = element_text(face = "bold.italic" ),
     legend.position = "none") +
   labs(
@@ -104,8 +102,6 @@ aisle_plot =
     x = "Aisle",
     y = "Number of items ordered",
     caption = "Data from Instacart Online Grocery Shopping Dataset 2017") 
-
-aisle_plot
 ```
 
 #### 1.3.3. Most popular items 
@@ -113,8 +109,8 @@ aisle_plot
 Now, we use a table showing the **three most popular items** in each of the aisles `baking ingredients`, `dog food care`, and `packaged vegetables fruits`, including the number of times each item was ordered.
 
 ```{r pop_item_table}
-pop_item = 
-  instacart %>% 
+pop_item =
+  instacart_df %>% 
   filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
   group_by(aisle) %>% 
   count(product_name) %>%
@@ -123,9 +119,11 @@ pop_item =
   mutate(product_name_count = paste(product_name, "-", "ordered", n, "times")) %>%
   select(-n, -product_name) %>% 
   arrange(rank) %>% 
-  pivot_wider(names_from = aisle, values_from = product_name_count)
+  pivot_wider(
+    names_from = aisle, 
+    values_from = product_name_count)
 
-knitr::kable(pop_item, 
+knitr::kable(pop_item,
              caption = "_**Fig. 3. Top 3 Items Ordered by Aisle**_", 
              format = "simple", 
              col.names = str_to_title(names(pop_item)),
@@ -137,20 +135,25 @@ knitr::kable(pop_item,
 Here, a table is used to show the **mean hour** of the day at which `Pink Lady Apples` and `Coffee Ice Cream` are ordered on **each day** of the week. This table has been formatted for human readers (2 x 7 table).
 
 ```{r pink_coff_table, message = FALSE}
-pink_coff_table =
-  instacart %>%
-  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+instacart_df %>%
   group_by(product_name, order_dow) %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
   summarize(mean_hour = mean(order_hour_of_day)) %>% 
-  mutate(order_dow = recode(order_dow, `0` = "Sun", `1` = "Mon", `2` = "Tues", `3` = "Wed", `4` = "Thurs", `5` = "Fri", `6` = "Sat")) %>% 
-  pivot_wider(names_from = "order_dow", values_from = "mean_hour")
-
-knitr::kable(pink_coff_table,
+  mutate(order_dow = recode(order_dow, 
+                            `0` = "Sun", `1` = "Mon", `2` = "Tues", 
+                            `3` = "Wed", `4` = "Thurs", `5` = "Fri", 
+                            `6` = "Sat")) %>% 
+  pivot_wider(
+    names_from = "order_dow", 
+    values_from = "mean_hour") %>%
+  arrange(desc(product_name)) %>% 
+  rename(Product = product_name) %>% 
+  knitr::kable(
              digits = 2,
              caption = "_**Fig. 4. Mean Hour of Day for Pink Lady Appples and Coffee Ice Cream**_")
 ```
 
-From this table, it can be seen that for most days, **pink lady apples** are purchased _earlier in the day_ compared to **coffee ice cream** purchases. However, Friday seems to be the exception when coffee ice cream was purchased slightly earlier than pink lady apples at an average of 12.26.
+From this table, it can be seen that for most days, **pink lady apples** are ordered _earlier in the day_ compared to **coffee ice cream** purchases. However, Friday seems to be the exception when coffee ice cream was ordered slightly earlier than pink lady apples.
 
 
 ## Problem 2
@@ -164,26 +167,87 @@ First, we read in the `BRFSS` dataset and conduct some data cleaning by:
 - including only responses from “Excellent” to “Poor”
 - organizing responses as a factor taking levels ordered from “Poor” to “Excellent”
 
-```{r BRFSS import}
+```{r BRFSS_read_clean}
 data("brfss_smart2010")
+
+brfss_df =
+  brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health") %>% 
+  mutate(response = as_factor(response)) %>% 
+  arrange(desc(response)) %>% 
+  rename(state = locationabbr, location = locationdesc, resp_id = respid)
 ```
 
 ### 2.2. Exploration of the `BRFSS` dataset
 
-Using this dataset, we do or answer the following (commenting on the results of each):
+Using the `BRFSS` dataset, we will create:
 
-- In 2002, which states were observed at 7 or more locations? What about in 2010?
-- Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
-- Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+1. A table of states observed at 7 or more locations in 2002 and 2010
+2. A spaghetti plot of the average data value over time by state
+3. A two-panel plot showing the distribution of data value in NY for 2006 and 2010
 
 #### 2.2.1. States observed at 7 or more locations in 2002 and 2010
 
-In 2002, which states were observed at 7 or more locations? What about in 2010?
+```{r states_observed, message = FALSE}
+brfss_states =
+  brfss_df %>% 
+  group_by(year, state) %>% 
+  summarize(state_count = n()) %>% 
+  filter(year == 2002 | year == 2010, state_count >= 7) %>% 
+  pivot_wider(names_from = year, values_from = state_count) %>% 
+  arrange(state)
 
-#### 2.2.2. Most popular items 
+knitr::kable(brfss_states,
+             format = "simple",
+             col.names = c("State", "2002", "2010"),
+             caption = "_**Fig. 5. States observed at 7 or more locations in 2002 and 2010**_")
 
-Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
+```
+
+In _2002_, there were **`r nrow(brfss_states %>% select("2002") %>% drop_na())` states** that were observed at 7 or more locations while in _2010_, there were **`r nrow(brfss_states %>% select("2010") %>% drop_na())` states** with 7 or more observation locations.
+
+#### 2.2.2. Spaghetti plot 
+
+The following code chunk establishes a dataset that is:
+
+- limited to Excellent responses; and
+- contains `year`, `state`, and `mean_data_value` (a variable that averages the `data_value` across locations within a state)
+
+This also creates a “spaghetti” plot of this average value over time within a state (showing a line for each state across years).
+
+```{r brfss_spaghetti, warning = FALSE}
+brfss_df %>% 
+  filter(response == "Excellent") %>% 
+  group_by(state, year) %>% 
+  summarize(mean_data_value = mean(data_value)) %>% 
+  ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
+  geom_line() +
+  scale_color_viridis_d() +
+  labs(x = "Year", y = "Mean Data Value", title = "Fig. 6. Mean Data Value by State") +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right")
+```
 
 #### 2.2.3. Distribution of `data_value` in NY
 
-Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+Next, we develop a two-panel plot showing, for the years 2006 and 2010, distribution of `data_value` for responses (“Poor” to “Excellent”) among locations in NY State.
+
+```{r BRFSS_NY_plot}
+brfss_df %>% 
+  filter(year == "2006" | year == "2010", state == "NY") %>% 
+  ggplot(aes(x = response, y = data_value, color = year)) +
+  geom_point() +
+  facet_grid(~year) +
+  labs(
+    x = "Response", 
+    y = "Data Value", 
+    title = "Fig. 7. Distributions of Data Value in NY") +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = -35, hjust = 0, vjust = .5),
+    plot.title = element_text(face = "bold.italic"))
+```
+
