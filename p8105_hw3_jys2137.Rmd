@@ -283,7 +283,7 @@ accel_df =
 head(accel_df)
 ```
 
-#### 3.1.1 Brief description of the final `accel` dataset
+#### Brief description of the final `accel` dataset
 
 The final `accel` dataset includes **`r nrow(accel_df)` observations** and **`r ncol(accel_df)` variables**, which include `week`, `day_id`,`day`, `minute`, `activity_count`, and `weekday_weekend` which signified if the day was a _weekday_ or _weekend._
 
@@ -306,20 +306,34 @@ act_table =
              align = "cccccccc",
              digit = 0)
 ```
-#### 3.2.1 Apparent trends
+#### Brief description of apparent trends
 
-The table above like 
-  
+The table above indicates that **Saturdays** have the **least activity**, with two Saturdays having a total activity of 1440 minutes. However, for these it looks like there was a possible data collection error -- the value of "1" was input into the total activity variable for each minute in that day. Thus, this might not actually have any inherent value in relation to figuring out whether there are trends that can be pulled out simply from this table. 
+
+In conclusion, there are no clear trends that can be garnered through observation of this table. Instead, additional analyses must be conducted to lend confidence into any possible trend that may exist in average total activity each day throughout the week.
+
   
 ### 3.3. Activity time courses by day
 
 Finally, we create a single-panel plot that shows the 24-hour activity time courses for each day and uses color to indicate day of the week. 
 
-```{r}
-
+```{r accel_plot}
+accel_df %>% 
+  group_by(day) %>% 
+  ggplot(aes(x = minute, y = activity_count, group = day, color = day)) + 
+  geom_line(alpha = .25) + 
+  geom_smooth(se = FALSE, size = 1) +
+  scale_x_continuous(breaks = c(0, 360, 720, 1080, 1440),
+                     labels = c("12am", "6am", "12pm", "6pm", "12am")) +
+  scale_colour_discrete(name = "Day of Week") +
+  labs(x = "Time of Day", y = "Activity Count", title = "Fig. 9. Daily Activity for Each Day of the Week") +
+  theme(plot.title = element_text(face = "bold.italic"))
 ```
-#### 3.3.1 Conclusions on activity time
 
-Describe in words any patterns or conclusions you can make based on this graph.
+#### Conclusions on activity time
 
-Based on this graph,                                  
+Based on this graph, which illustrates activity throughout the each day (colored by day of the week), we can see the following patterns:
+
+- Activity was _**higher** during the day_, and _**lower** at night_, from 12am to 6am. This makes sense, as most people are asleep at those hours and are moving around during the day. 
+- There is a _**spike**_ in activity at _noon_, mainly on _Sundays_. This is likely due to people going out for lunch at this time. 
+- An additional _**increase**_ in activity takes place on _Friday evenings_ after 6pm. This may be due to people going out and socializing at that time.
