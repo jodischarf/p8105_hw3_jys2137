@@ -46,6 +46,8 @@ data("instacart")
 instacart_df = 
   instacart %>% 
   as_tibble(instacart)
+
+instacart_df
 ```
 
 ### 1.2. Description of the `instacart` dataset
@@ -81,7 +83,7 @@ instacart_df %>%
              align = "clc")
 ```
 
-#### 1.3.2. Number of items from each aisle 
+#### 1.3.2. Number of _items_ from each aisle 
 
 Next, we produce a plot that shows the number of items ordered in each aisle. Only aisles with more than 10000 items ordered are included.
 
@@ -135,7 +137,8 @@ knitr::kable(pop_item,
 Here, a table is used to show the **mean hour** of the day at which `Pink Lady Apples` and `Coffee Ice Cream` are ordered on **each day** of the week. This table has been formatted for human readers (2 x 7 table).
 
 ```{r pink_coff_table, message = FALSE}
-instacart_df %>%
+pink_coff_table = 
+  instacart_df %>%
   group_by(product_name, order_dow) %>%
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
   summarize(mean_hour = mean(order_hour_of_day)) %>% 
@@ -147,8 +150,9 @@ instacart_df %>%
     names_from = "order_dow", 
     values_from = "mean_hour") %>%
   arrange(desc(product_name)) %>% 
-  rename(Product = product_name) %>% 
-  knitr::kable(
+  rename(Product = product_name) 
+
+  knitr::kable(pink_coff_table,
              digits = 2,
              caption = "_**Fig. 4. Mean Hour of Day for Pink Lady Appples and Coffee Ice Cream**_")
 ```
@@ -160,6 +164,7 @@ From this table, it can be seen that for most days, **pink lady apples** are ord
 This problem uses data accessed from data.gov from the **Behavioral Risk Factors Surveillance System for Selected Metropolitan Area Risk Trends (SMART) for 2002-2010**, or `BRFSS` for short, which consists of information about modifiable risk factors for chronic diseases and other leading causes of death.
 
 ### 2.1. Loading in the `BRFSS` dataset
+
 First, we read in the `BRFSS` dataset and conduct some data cleaning by:
 
 - formatting the data to use appropriate variable names;
@@ -176,38 +181,31 @@ brfss_df =
   filter(topic == "Overall Health") %>% 
   mutate(response = as_factor(response)) %>% 
   arrange(desc(response)) %>% 
-  rename(state = locationabbr, location = locationdesc, resp_id = respid)
+  rename(state = locationabbr, county = locationdesc)
 ```
 
-### 2.2. Exploration of the `BRFSS` dataset
+### 2.2. States observed at 7 or more locations in 2002 and 2010
 
-Using the `BRFSS` dataset, we will create:
-
-1. A table of states observed at 7 or more locations in 2002 and 2010
-2. A spaghetti plot of the average data value over time by state
-3. A two-panel plot showing the distribution of data value in NY for 2006 and 2010
-
-#### 2.2.1. States observed at 7 or more locations in 2002 and 2010
+Using the `BRFSS` dataset, we will create a table of states observed at 7 or more locations in 2002 and 2010.
 
 ```{r states_observed, message = FALSE}
 brfss_states =
   brfss_df %>% 
   group_by(year, state) %>% 
-  summarize(state_count = n()) %>% 
-  filter(year == 2002 | year == 2010, state_count >= 7) %>% 
-  pivot_wider(names_from = year, values_from = state_count) %>% 
+  summarize(num_locations = n()) %>% 
+  filter(year %in% c(2002, 2010), 
+         num_locations >= 7) %>% 
+  pivot_wider(names_from = year, values_from = num_locations) %>% 
   arrange(state)
 
 knitr::kable(brfss_states,
-             format = "simple",
              col.names = c("State", "2002", "2010"),
              caption = "_**Fig. 5. States observed at 7 or more locations in 2002 and 2010**_")
-
 ```
 
 In _2002_, there were **`r nrow(brfss_states %>% select("2002") %>% drop_na())` states** that were observed at 7 or more locations while in _2010_, there were **`r nrow(brfss_states %>% select("2010") %>% drop_na())` states** with 7 or more observation locations.
 
-#### 2.2.2. Spaghetti plot 
+### 2.3. Spaghetti plot 
 
 The following code chunk establishes a dataset that is:
 
@@ -219,35 +217,109 @@ This also creates a “spaghetti” plot of this average value over time within 
 ```{r brfss_spaghetti, warning = FALSE}
 brfss_df %>% 
   filter(response == "Excellent") %>% 
-  group_by(state, year) %>% 
+  group_by(year, state) %>% 
   summarize(mean_data_value = mean(data_value)) %>% 
   ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
   geom_line() +
   scale_color_viridis_d() +
   labs(x = "Year", y = "Mean Data Value", title = "Fig. 6. Mean Data Value by State") +
   theme(
-    plot.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold.italic"),
     legend.position = "right")
 ```
 
-#### 2.2.3. Distribution of `data_value` in NY
+### 2.4. Distribution of `data_value` in NY
 
 Next, we develop a two-panel plot showing, for the years 2006 and 2010, distribution of `data_value` for responses (“Poor” to “Excellent”) among locations in NY State.
 
-```{r BRFSS_NY_plot}
+```{r brfss_ny_plot}
 brfss_df %>% 
-  filter(year == "2006" | year == "2010", state == "NY") %>% 
+  filter(
+    year %in% c(2006, 2010), 
+    state %in% c("NY")) %>% 
   ggplot(aes(x = response, y = data_value, color = year)) +
-  geom_point() +
+  geom_point(alpha = .75) +
   facet_grid(~year) +
-  labs(
-    x = "Response", 
-    y = "Data Value", 
-    title = "Fig. 7. Distributions of Data Value in NY") +
   theme_bw() +
   theme(
     legend.position = "none",
     axis.text.x = element_text(angle = -35, hjust = 0, vjust = .5),
-    plot.title = element_text(face = "bold.italic"))
+    plot.title = element_text(face = "bold.italic")) +
+  labs(
+    x = "Response", 
+    y = "Data Value", 
+    title = "Fig. 7. Distributions of Data Value in NY")
 ```
 
+## Problem 3
+
+This problem uses five weeks of accelerometer data collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure (CHF).
+
+### 3.1. Loading in the `accel` dataset
+
+Here, we load, tidy, and wrangle the `accel` data. This final dataset:
+
+- includes all originally observed variables and values
+- has useful variable names
+- includes a `weekday` vs `weekend` variable
+- encodes data with reasonable variable classes
+
+```{r accel_df_clean, message = FALSE}
+accel_df = 
+  read_csv("./data/accel_data.csv") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "minute",
+    names_prefix = "activity_", 
+    values_to = "activity_count") %>% 
+  mutate(
+    minute = as.numeric(minute),
+    day = factor(day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday","Thursday", "Friday", "Saturday")),
+    weekday_weekend = as.numeric(day %in% c("Saturday", "Sunday")),
+    weekday_weekend = recode(weekday_weekend, 
+                             `0` = "weekday", `1` = "weekend"))
+
+head(accel_df)
+```
+
+#### 3.1.1 Brief description of the final `accel` dataset
+
+The final `accel` dataset includes **`r nrow(accel_df)` observations** and **`r ncol(accel_df)` variables**, which include `week`, `day_id`,`day`, `minute`, `activity_count`, and `weekday_weekend` which signified if the day was a _weekday_ or _weekend._
+
+### 3.2. Total activity for each day
+
+Using the accelerometer data, we create a plot of total activity for each day. We do this by using the previously tidied dataset and aggregating across minutes to create a total activity variable, `activity_tot` for each day, through the code chunk below.
+
+```{r accel_act_table}
+act_table =
+  accel_df %>% 
+  group_by(day, week) %>% 
+  summarize(activity_tot = sum(activity_count)) %>% 
+  pivot_wider(
+    names_from = day, 
+    values_from = activity_tot) %>%
+  rename(Week = week) 
+
+  knitr::kable(act_table,
+             caption = "_**Fig. 8. Total Activity By Day**_",
+             align = "cccccccc",
+             digit = 0)
+```
+#### 3.2.1 Apparent trends
+
+The table above like 
+  
+  
+### 3.3. Activity time courses by day
+
+Finally, we create a single-panel plot that shows the 24-hour activity time courses for each day and uses color to indicate day of the week. 
+
+```{r}
+
+```
+#### 3.3.1 Conclusions on activity time
+
+Describe in words any patterns or conclusions you can make based on this graph.
+
+Based on this graph,                                  
