@@ -237,7 +237,7 @@ brfss_df %>%
 
 Next, we develop a two-panel plot showing, for the years 2006 and 2010, distribution of `data_value` for responses (“Poor” to “Excellent”) among locations in NY State.
 
-```{r brfss_ny_plot, fig.height=5, fig.width=7}
+```{r brfss_ny_plot, fig.height=4, fig.width=6}
 brfss_df %>% 
   filter(
     year %in% c(2006, 2010), 
@@ -246,6 +246,7 @@ brfss_df %>%
   geom_boxplot() +
   geom_jitter(width = 0.25, alpha = 0.75) +
   facet_grid(~year) +
+  theme_bw() +
   theme(
     legend.position = "none",
     axis.text.x = element_text(angle = -35, hjust = 0, vjust = .5),
