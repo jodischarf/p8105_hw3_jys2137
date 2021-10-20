@@ -95,6 +95,7 @@ instacart_df %>%
   coord_flip() +
   theme(
     axis.text.x = element_text(angle = -35, hjust = 0, vjust = .5),
+    axis.text.y = element_text(size = 8),
     plot.title = element_text(face = "bold.italic" ),
     legend.position = "none") +
   labs(
@@ -111,7 +112,8 @@ Now, we use a table showing the **three most popular items** in each of the aisl
 ```{r pop_item_table}
 pop_item =
   instacart_df %>% 
-  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables 
+                      fruits")) %>%
   group_by(aisle) %>% 
   count(product_name) %>%
   mutate(rank = rank(desc(n))) %>% 
@@ -152,7 +154,8 @@ pink_coff_table =
 
   knitr::kable(pink_coff_table,
              digits = 2,
-             caption = "_**Fig. 4. Mean Hour of Day for Pink Lady Appples and Coffee Ice Cream**_")
+             caption = "_**Fig. 4. Mean Hour of Day for Pink Lady Appples and 
+             Coffee Ice Cream**_")
 ```
 
 From this table, it can be seen that for most days, **pink lady apples** are ordered _earlier in the day_ compared to **coffee ice cream** purchases. However, Friday seems to be the exception when coffee ice cream was ordered slightly earlier than pink lady apples.
@@ -200,7 +203,8 @@ brfss_states =
 
 knitr::kable(brfss_states,
              col.names = c("State", "2002", "2010"),
-             caption = "_**Fig. 5. States observed at 7 or more locations in 2002 and 2010**_")
+             caption = "_**Fig. 5. States observed at 7 or more locations in 2002 
+             and 2010**_")
 ```
 
 In _2002_, there were **`r nrow(brfss_states %>% select("2002") %>% drop_na())` states** that were observed at 7 or more locations while in _2010_, there were **`r nrow(brfss_states %>% select("2010") %>% drop_na())` states** with 7 or more observation locations.
@@ -275,7 +279,8 @@ accel_df =
     values_to = "activity_count") %>% 
   mutate(
     minute = as.numeric(minute),
-    day = factor(day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday","Thursday", "Friday", "Saturday")),
+    day = factor(day, levels = c("Sunday", "Monday", "Tuesday", 
+                                 "Wednesday","Thursday", "Friday", "Saturday")),
     weekday_weekend = as.numeric(day %in% c("Saturday", "Sunday")),
     weekday_weekend = recode(weekday_weekend, 
                              `0` = "weekday", `1` = "weekend"))
