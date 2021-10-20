@@ -237,7 +237,7 @@ brfss_df %>%
 
 Next, we develop a two-panel plot showing, for the years 2006 and 2010, distribution of `data_value` for responses (“Poor” to “Excellent”) among locations in NY State.
 
-```{r brfss_ny_plot}
+```{r brfss_ny_plot, fig.height=5, fig.width=7}
 brfss_df %>% 
   filter(
     year %in% c(2006, 2010), 
