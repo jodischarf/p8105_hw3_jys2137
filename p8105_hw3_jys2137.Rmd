@@ -243,7 +243,8 @@ brfss_df %>%
     year %in% c(2006, 2010), 
     state %in% c("NY")) %>% 
   ggplot(aes(x = response, y = data_value, color = response)) +
-  geom_point(alpha = .75) +
+  geom_boxplot() +
+  geom_jitter(width = 0.25, alpha = 0.75) +
   facet_grid(~year) +
   theme_bw() +
   theme(
