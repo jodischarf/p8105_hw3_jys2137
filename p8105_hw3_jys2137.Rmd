@@ -112,8 +112,8 @@ Now, we use a table showing the **three most popular items** in each of the aisl
 ```{r pop_item_table}
 pop_item =
   instacart_df %>% 
-  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables 
-                      fruits")) %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", 
+                      "packaged vegetables fruits")) %>%
   group_by(aisle) %>% 
   count(product_name) %>%
   mutate(rank = rank(desc(n))) %>% 
@@ -126,7 +126,6 @@ pop_item =
     values_from = product_name_count)
 
 knitr::kable(pop_item,
-             format = "pipe", 
              caption = "_**Fig. 3. Top 3 Items Ordered by Aisle**_", 
              col.names = str_to_title(names(pop_item)),
              align = "clll")
@@ -204,7 +203,7 @@ brfss_states =
 knitr::kable(brfss_states,
              col.names = c("State", "2002", "2010"),
              caption = "_**Fig. 5. States observed at 7 or more locations in 2002 
-             and 2010**_")
+                        and 2010**_")
 ```
 
 In _2002_, there were **`r nrow(brfss_states %>% select("2002") %>% drop_na())` states** that were observed at 7 or more locations while in _2010_, there were **`r nrow(brfss_states %>% select("2010") %>% drop_na())` states** with 7 or more observation locations.
@@ -226,7 +225,9 @@ brfss_df %>%
   ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
   geom_line() +
   scale_color_viridis_d() +
-  labs(x = "Year", y = "Mean Data Value", title = "Fig. 6. Mean Data Value by State") +
+  labs(x = "Year", 
+       y = "Mean Data Value", 
+       title = "Fig. 6. Mean Data Value by State") +
   theme(
     plot.title = element_text(face = "bold.italic"),
     legend.position = "right")
@@ -241,8 +242,9 @@ brfss_df %>%
   filter(
     year %in% c(2006, 2010), 
     state %in% c("NY")) %>% 
-  ggplot(aes(x = response, y = data_value, color = year)) +
-  geom_point(alpha = .75) +
+  ggplot(aes(x = response, y = data_value, color = response)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.25, alpha = 0.75) +
   facet_grid(~year) +
   theme_bw() +
   theme(
@@ -332,7 +334,9 @@ accel_act_plot =
   scale_x_continuous(breaks = c(0, 360, 720, 1080, 1440),
                      labels = c("12am", "6am", "12pm", "6pm", "12am")) +
   scale_colour_discrete(name = "Day of Week") +
-  labs(x = "Time of Day", y = "Activity Count", title = "Fig. 9. Accelerometer Activity for Each Day of the Week") +
+  labs(x = "Time of Day", 
+       y = "Activity Count", 
+       title = "Fig. 9. Accelerometer Activity for Each Day of the Week") +
   theme(plot.title = element_text(face = "bold.italic"))
 
 accel_act_plot
